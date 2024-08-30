@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formSchema } from '@/app/tasks/schema';
@@ -26,8 +26,16 @@ import {
   CardFooter,
   CardHeader,
 } from '@/components/ui/card';
-import { Check } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type Task = {
+  id: number;
+  title: string;
+  description: string;
+  completed: boolean;
+  created_at: string;
+};
 
 async function fetchTasks() {
   const res = await fetch('/api/tasks');
@@ -167,7 +175,11 @@ export default function TasksPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (newTask.id) {
       // Update existing task
-      await updateMutation.mutateAsync({ ...values, id: newTask.id });
+      await updateMutation.mutateAsync({
+        ...values,
+        id: newTask.id,
+        completed: false,
+      });
     } else {
       // Add new task
       await addMutation.mutateAsync(values);
@@ -182,15 +194,26 @@ export default function TasksPage() {
 
   const onToggleCompleted = async (task: {
     id: number;
+    title: string;
+    description: string;
     completed: boolean;
   }) => {
     await updateMutation.mutateAsync({
-      ...task,
+      id: task.id,
+      title: task.title,
+      description: task.description,
       completed: !task.completed, // Toggle the completed status
     });
   };
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading)
+    return (
+      <div className="p-10 max-w-lg mx-auto flex space-y-3 flex-col">
+        <Skeleton className="w-full h-[325px] rounded-medium" />
+        <Skeleton className="w-48 h-[40px] rounded-2xl" />
+        <Skeleton className="w-full h-[100px] rounded-2xl" />
+      </div>
+    );
 
   return (
     <div className="p-10 max-w-lg mx-auto">
@@ -198,7 +221,7 @@ export default function TasksPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
-              <h1 className="text-3xl font-bold">Tasks</h1>
+              <h1 className="text-3xl font-bold">Start planning</h1>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <FormField
@@ -236,102 +259,100 @@ export default function TasksPage() {
           </form>
         </Form>
       </Card>
-      {isFetching && <p>Updating tasks...</p>}{' '}
-      {/* Show a loading message while refetching */}
-      <ul className="flex flex-col gap-4">
-        {tasks
-          ?.filter((task) => !task.completed)
-          .map((task: any) => (
-            <Card key={task.id} className="p-4">
-              <li className="flex justify-between items-center">
-                <div className="flex gap-4 items-center">
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={() => onToggleCompleted(task)}
-                  />
-                  <div>
-                    <p
-                      className={
-                        task.completed
-                          ? 'line-through text-gray-400'
-                          : 'text-lg font-bold'
-                      }
-                    >
-                      {task.title}
-                    </p>
-                    <p
-                      className={
-                        task.completed ? 'line-through text-gray-400' : ''
-                      }
-                    >
-                      {task.description}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {dayjs(task.created_at).format('DD-MM-YYYY')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={(e) => onRemove(task.id)}
-                  >
-                    <FaRegTrashCan />
-                  </Button>
-                  <Button variant="secondary" onClick={(e) => onEdit(task)}>
-                    <FaPencil />
-                  </Button>
-                </div>
-              </li>
-            </Card>
-          ))}
-      </ul>
-      <h2 className="text-2xl font-bold mt-8 mb-4">Completed Tasks</h2>
-      <ul className="flex flex-col gap-4">
-        {tasks
-          ?.filter((task) => task.completed)
-          .map((task: any) => (
-            <Card key={task.id} className="p-4">
-              <li className="flex justify-between items-center">
-                <div className="flex gap-4 items-center">
-                  <Checkbox
-                    checked={task.completed}
-                    onCheckedChange={() => onToggleCompleted(task)}
-                  />
-                  <div>
-                    <p
-                      className={
-                        task.completed
-                          ? 'line-through text-gray-400'
-                          : 'text-lg font-bold'
-                      }
-                    >
-                      {task.title}
-                    </p>
-                    <p
-                      className={
-                        task.completed ? 'line-through text-gray-400' : ''
-                      }
-                    >
-                      {task.description}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {dayjs(task.created_at).format('DD-MM-YYYY')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={(e) => onRemove(task.id)}
-                  >
-                    <FaRegTrashCan />
-                  </Button>
-                </div>
-              </li>
-            </Card>
-          ))}
-      </ul>
+      {tasks.find((tasks: Task) => !tasks?.completed) && (
+        <>
+          <h2 className="text-2xl font-bold mt-8 mb-4">Unfinished tasks</h2>
+
+          <ul className="flex flex-col gap-4">
+            {tasks
+              ?.filter((task: Task) => !task.completed)
+              .map((task: Task) => (
+                <Card key={task.id} className="p-4">
+                  <li className="flex justify-between items-center">
+                    <div className="flex gap-4 items-center">
+                      <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={() => onToggleCompleted(task)}
+                      />
+                      <div>
+                        <p
+                          className={
+                            task.completed
+                              ? 'line-through text-gray-400'
+                              : 'text-lg font-bold'
+                          }
+                        >
+                          {task.title}
+                        </p>
+                        <p
+                          className={
+                            task.completed ? 'line-through text-gray-400' : ''
+                          }
+                        >
+                          {task.description}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          {dayjs(task.created_at).format('DD-MM-YYYY')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={(e) => onRemove(task.id)}
+                      >
+                        <FaRegTrashCan />
+                      </Button>
+                      <Button variant="secondary" onClick={(e) => onEdit(task)}>
+                        <FaPencil />
+                      </Button>
+                    </div>
+                  </li>
+                </Card>
+              ))}
+          </ul>
+        </>
+      )}
+      {tasks.find((tasks: Task) => tasks?.completed) && (
+        <>
+          <h2 className="text-2xl font-bold mt-8 mb-4">Completed tasks</h2>
+          <ul className="flex flex-col gap-4">
+            {tasks
+              ?.filter((task: Task) => task.completed)
+              .map((task: Task) => (
+                <Card key={task.id} className="p-4">
+                  <li className="flex justify-between items-center">
+                    <div className="flex gap-4 items-center">
+                      <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={() => onToggleCompleted(task)}
+                      />
+                      <div>
+                        <p className="line-through text-gray-400">
+                          {task.title}
+                        </p>
+                        <p className="line-through text-gray-400">
+                          {task.description}
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          {dayjs(task.created_at).format('DD-MM-YYYY')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={(e) => onRemove(task.id)}
+                      >
+                        <FaRegTrashCan />
+                      </Button>
+                    </div>
+                  </li>
+                </Card>
+              ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
