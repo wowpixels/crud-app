@@ -22,8 +22,11 @@ export default function Page() {
       .string()
       .min(3, 'Username is required')
       .max(30, 'Username is too long')
-      .transform((val) => val.toLowerCase()),
+      .refine((val) => val === val.toLowerCase(), {
+        message: 'Username must be in lowercase',
+      }),
     password: z.string().min(1, 'Password is required'),
+    email: z.string().email('Invalid email address'),
   });
 
   const signUp = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -32,9 +35,10 @@ export default function Page() {
     const formData = new FormData(event.currentTarget);
     const username = formData.get('username');
     const password = formData.get('password');
+    const email = formData.get('email');
 
     // Validate the form data using the Zod schema
-    const validation = signUpSchema.safeParse({ username, password });
+    const validation = signUpSchema.safeParse({ username, password, email });
 
     if (!validation.success) {
       setError(validation.error.errors[0]?.message || 'Invalid input');
@@ -42,13 +46,17 @@ export default function Page() {
     }
 
     // If validation is successful, extract the validated data
-    const { username: validatedUsername, password: validatedPassword } =
-      validation.data;
+    const {
+      username: validatedUsername,
+      password: validatedPassword,
+      email: validatedEmail,
+    } = validation.data;
 
     // Prepare the data for the POST request
     const body = new FormData();
     body.append('username', validatedUsername);
     body.append('password', validatedPassword);
+    body.append('email', validatedEmail);
 
     // Make a POST request to the API
     try {
@@ -62,10 +70,10 @@ export default function Page() {
         setError(result.error || 'Something went wrong');
       } else {
         // Redirect or handle success
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }
     } catch (err) {
-      console.error('Signup error:', err);
+      console.error('Sign up error:', err);
       setError('Internal server error');
     }
   };
@@ -81,6 +89,9 @@ export default function Page() {
             <CardContent>
               <Label htmlFor="username">Username</Label>
               <Input name="username" id="username" />
+              <br />
+              <Label htmlFor="email">Email</Label>
+              <Input name="email" id="email" />
               <br />
               <Label htmlFor="password">Password</Label>
               <Input type="password" name="password" id="password" />

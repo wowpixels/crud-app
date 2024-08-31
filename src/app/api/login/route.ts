@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const username = formData.get('username') as string | null;
-    console.log('🚀 ~ POST ~ formData:', formData);
 
     if (
       typeof username !== 'string' ||
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use raw SQL to query the database
-    const result = await db.query('SELECT * FROM "user" WHERE username = $1', [
+    const result = await db.query('SELECT * FROM "users" WHERE username = $1', [
       username.toLowerCase(),
     ]);
 
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
       sessionCookie.value,
       sessionCookie.attributes
     );
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(new URL('/dashboard', req.url));
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

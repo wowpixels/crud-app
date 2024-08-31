@@ -1,16 +1,14 @@
 import { Lucia } from 'lucia';
 import { NodePostgresAdapter } from '@lucia-auth/adapter-postgresql';
-import pg from 'pg';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
-import db from './db';
 
 import type { Session, User } from 'lucia';
 import pool from './db';
 
 const adapter = new NodePostgresAdapter(pool, {
-  user: 'user',
-  session: 'session',
+  user: 'users',
+  session: 'sessions',
 });
 
 export const lucia = new Lucia(adapter, {
