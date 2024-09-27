@@ -25,8 +25,11 @@ export default function Page() {
       .refine((val) => val === val.toLowerCase(), {
         message: 'Username must be in lowercase',
       }),
-    password: z.string().min(1, 'Password is required'),
     email: z.string().email('Invalid email address'),
+    password: z
+      .string()
+      .min(6, 'Password should be at least 6 characters')
+      .max(255, 'Password is too long'),
   });
 
   const signUp = async (event: React.FormEvent<HTMLFormElement>) => {

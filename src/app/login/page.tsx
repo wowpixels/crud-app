@@ -43,20 +43,11 @@ export default function Page() {
       return;
     }
 
-    // If validation is successful, extract the validated data
-    const { username: validatedUsername, password: validatedPassword } =
-      validation.data;
-
-    // Prepare the data for the POST request
-    const body = new FormData();
-    body.append('username', validatedUsername);
-    body.append('password', validatedPassword);
-
     // Make a POST request to the API
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
-        body: body,
+        body: formData,
       });
 
       if (!response.ok) {
